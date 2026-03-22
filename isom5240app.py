@@ -57,11 +57,11 @@ if st.button("Start Triage", type="primary"):
         col1, col2 = st.columns(2)
 
         with col1:
-            st.subheader("📋 Recommended Department")
+            st.write("📋 Recommended Department")
             st.metric(value=f"{dept_score:.2%}", label=dept_label)
 
         with col2:
-            st.subheader("⚠️ Urgency Level")
+            st.write("⚠️ Urgency Level")
             st.metric(value=f"{urgency_confidence:.2%}", label=urgency_level)
 
         # Additional note
