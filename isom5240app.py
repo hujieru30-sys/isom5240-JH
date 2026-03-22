@@ -1,49 +1,61 @@
 import streamlit as st
 from transformers import pipeline
-from huggingface_hub import InferenceClient
+import torch
+from diffusers import StableDiffusionPipeline
 from PIL import Image
-import os
+import time
 
-# ==================== Configuration ====================
-# Pipeline 1: Department classification (fine-tuned model)
-MODEL_DEPT = "JR-2026/CustomModel_medical"
+# ==================== 配置 ====================
+# Pipeline 1: 科室分类（微调模型）
+MODEL_DEPT = "JR-2026/CustomModel_medical"   # 请替换为你的实际模型
 
-# Image generation model (Hugging Face Inference API)
-MODEL_IMAGE = "zai-org/GLM-Image"  # 适合生成包含文字信息的科室图片
+# 图像生成模型（使用本地 diffusers）
+MODEL_IMAGE = "stabilityai/stable-diffusion-2-1"  # 可选：runwayml/stable-diffusion-v1-5
 
-# 科室图片提示词映射（可根据实际模型输出调整）
-PROMPT_TEMPLATE = "A professional, realistic image of the {department} department in a modern hospital, clean design, soft lighting, 4k quality"
+# 提示词模板
+PROMPT_TEMPLATE = "A realistic photo of the {department} department in a modern hospital, clean, professional, bright lighting"
 
-# ==================== Load models ====================
+# ==================== 加载模型 ====================
 @st.cache_resource
 def load_department_pipeline():
-    """加载部门分类模型"""
+    """加载科室分类模型"""
     return pipeline("text-classification", model=MODEL_DEPT)
 
 @st.cache_resource
-def get_inference_client():
-    """获取 Hugging Face Inference API 客户端"""
-    # 从环境变量或 secrets 读取 token
-    token = os.getenv("HF_TOKEN") or st.secrets.get("HF_TOKEN", None)
-    if not token:
-        st.warning("未设置 HF_TOKEN，图像生成功能将不可用。请在 .streamlit/secrets.toml 中配置。")
-    return InferenceClient(token=token) if token else InferenceClient()
+def load_image_pipeline():
+    """加载本地 Stable Diffusion 模型（仅当 GPU 可用时）"""
+    if not torch.cuda.is_available():
+        st.warning("❌ GPU 不可用，无法加载图像生成模型。图片生成功能将禁用。")
+        return None
+    try:
+        pipe = StableDiffusionPipeline.from_pretrained(
+            MODEL_IMAGE,
+            torch_dtype=torch.float16
+        )
+        pipe = pipe.to("cuda")
+        # 启用内存优化（可选）
+        pipe.enable_attention_slicing()
+        return pipe
+    except Exception as e:
+        st.error(f"图像模型加载失败: {e}")
+        return None
 
-# ==================== Image generation ====================
-def generate_department_image(department, client):
-    """根据科室名称生成图片"""
+# ==================== 图像生成 ====================
+def generate_department_image(department, pipe):
+    """使用本地 pipeline 生成图片"""
     prompt = PROMPT_TEMPLATE.format(department=department)
     try:
-        image = client.text_to_image(prompt, model=MODEL_IMAGE)
+        with st.spinner(f"正在为 {department} 科室生成图片..."):
+            image = pipe(prompt, num_inference_steps=25).images[0]
         return image
     except Exception as e:
-        st.error(f"图片生成失败: {e}")
+        st.error(f"生成失败: {e}")
         return None
 
 # ==================== UI ====================
 st.set_page_config(page_title="MediTriage AI", page_icon="🏥")
-st.title("🏥 MediTriage AI - Smart Medical Triage Assistant")
-st.markdown("请描述您的症状，系统将推荐科室并生成对应科室图片。")
+st.title("🏥 MediTriage AI - 智能分诊助手")
+st.markdown("请描述症状，系统将推荐科室并自动生成科室图片。")
 
 user_input = st.text_area("症状描述", height=150, placeholder="例如：头痛、发烧两天，伴有恶心...")
 
@@ -51,13 +63,13 @@ if st.button("开始分诊", type="primary"):
     if not user_input.strip():
         st.warning("请输入症状描述。")
     else:
-        with st.spinner("正在分析..."):
-            # Pipeline 1: 科室分类
-            dept_result = load_department_pipeline()(user_input)
+        with st.spinner("正在分析症状..."):
+            # 科室分类
+            classifier = load_department_pipeline()
+            dept_result = classifier(user_input)
             dept_label = dept_result[0]['label']
             dept_score = dept_result[0]['score']
 
-        # 显示科室推荐结果
         st.success("分析完成")
         col1, col2 = st.columns(2)
 
@@ -65,20 +77,17 @@ if st.button("开始分诊", type="primary"):
             st.write("📋 推荐科室")
             st.metric(value=f"{dept_score:.2%}", label=dept_label)
 
-        # 图像生成部分（原 Pipeline 2 的替代）
         with col2:
-            st.write("🖼️ 科室图片（AI 生成）")
-            client = get_inference_client()
-            # 检查是否有 token
-            if client.token:
-                with st.spinner("正在生成科室图片..."):
-                    image = generate_department_image(dept_label, client)
+            st.write("🖼️ AI 生成科室图片")
+            # 加载图像生成模型
+            img_pipe = load_image_pipeline()
+            if img_pipe is None:
+                st.info("⚠️ 未检测到 GPU，无法生成图片。如需启用，请使用支持 GPU 的环境（如 Colab 或本地 GPU）。")
+            else:
+                image = generate_department_image(dept_label, img_pipe)
                 if image:
                     st.image(image, caption=f"{dept_label} 科室", use_container_width=True)
                 else:
-                    st.info("图片生成失败，请检查网络或稍后重试。")
-            else:
-                st.info("未配置 Hugging Face Token，无法生成图片。请在 .streamlit/secrets.toml 中添加 HF_TOKEN。")
+                    st.info("图片生成失败，请稍后重试。")
 
-        # 说明信息
         st.info("注：本系统仅供参考，最终诊断请咨询专业医生。")
