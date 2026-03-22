@@ -2,7 +2,7 @@ import streamlit as st
 from transformers import pipeline
 
 def main():
-    sentiment_pipeline = pipeline(model="distilbert/distilbert-base-uncased-finetuned-sst-2-english")
+    sentiment_pipeline = pipeline(model="JR-2026/CustomModel_medical"")
 
     st.title("Sentiment Analysis with HuggingFace Spaces")
     st.write("Enter a sentence to analyze its sentiment:")
@@ -13,8 +13,9 @@ def main():
         sentiment = result[0]["label"]
         confidence = result[0]["score"]
 
-        st.write(f"Sentiment: {sentiment}")
-        st.write(f"Confidence: {confidence:.2f}")
+        st.write(f"Sentiment: ")
+        for r in result:
+            st.write(f"{r['label']}: {r['score']:.4f}")
 
 if __name__ == "__main__":
     main()
