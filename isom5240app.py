@@ -6,9 +6,9 @@ import torch
 # Pipeline 1: Department classification (fine-tuned model)
 MODEL_DEPT = "JR-2026/CustomModel_medical"
 # Pipeline 2: Urgency assessment (using pre-trained sentiment analysis model)
-MODEL_URGENCY = "nlptown/bert-base-multilingual-uncased-sentiment"  # Output 1-5 stars
+MODEL_URGENCY = "nlptown/bert-base-multilingual-uncased-sentiment"
 
-# Department label mapping (not needed if model directly outputs label string)
+# Department label mapping 
 # For safety, read id2label from model config
 @st.cache_resource
 def load_department_pipeline():
