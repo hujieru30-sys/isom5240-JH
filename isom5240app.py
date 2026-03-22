@@ -6,7 +6,7 @@ import torch
 # Pipeline 1: Department classification (fine-tuned model)
 MODEL_DEPT = "JR-2026/CustomModel_medical"
 # Pipeline 2: Urgency assessment (using pre-trained sentiment analysis model)
-MODEL_URGENCY = "facebook/bart-large-mnli"
+MODEL_URGENCY = "nlptown/bert-base-multilingual-uncased-sentiment"
 
 # Department label mapping 
 # For safety, read id2label from model config
