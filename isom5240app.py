@@ -21,11 +21,10 @@ def load_urgency_pipeline():
     return pipeline("sentiment-analysis", model=MODEL_URGENCY)
 
 def map_urgency(score):
-    """将情感分数（1-5星）映射为紧急程度"""
-    rating = int(score.split()[0])  # 输出格式 "1 star" -> 1
-    if rating <= 1:
+    """根据情感分析模型的置信度划分紧急程度"""
+    if score < 0.4:
         return "低（建议普通门诊）"
-    elif rating <= 2:
+    elif score < 0.7:
         return "中（建议尽快就诊）"
     else:
         return "高（建议立即就医）"
@@ -50,9 +49,8 @@ if st.button("开始分诊", type="primary"):
 
             # Pipeline 2: 紧急程度判断
             urgency_result = load_urgency_pipeline()(user_input)
-            urgency_raw = urgency_result[0]['label']  # 例如 "5 stars"
-            urgency_level = map_urgency(urgency_raw)
             urgency_confidence = urgency_result[0]['score']
+            urgency_level = map_urgency(urgency_confidence)
 
         # 显示结果
         st.success("分析完成")
