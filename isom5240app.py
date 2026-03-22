@@ -58,11 +58,11 @@ if st.button("开始分诊", type="primary"):
 
         with col1:
             st.subheader("📋 建议科室")
-            st.metric(label=dept_label, value=f"{dept_score:.2%}")
+            st.metric(value=f"{dept_score:.2%}" , label=dept_label)
 
         with col2:
             st.subheader("⚠️ 紧急程度")
-            st.metric(label=urgency_level, value=f"{urgency_confidence:.2%}")
+            st.metric(value=f"{urgency_confidence:.2%}" , label=urgency_level)
 
         # 附加说明
         st.info("注意：本系统仅作为辅助参考，最终诊断请咨询专业医生。")
