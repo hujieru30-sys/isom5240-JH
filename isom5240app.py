@@ -3,7 +3,7 @@ from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassifica
 import torch
 
 # ==================== Configuration ====================
-# Pipeline 1: Department classification (your fine-tuned model)
+# Pipeline 1: Department classification (fine-tuned model)
 MODEL_DEPT = "JR-2026/CustomModel_medical"
 # Pipeline 2: Urgency assessment (using pre-trained sentiment analysis model)
 MODEL_URGENCY = "nlptown/bert-base-multilingual-uncased-sentiment"  # Output 1-5 stars
@@ -57,20 +57,12 @@ if st.button("Start Triage", type="primary"):
         col1, col2 = st.columns(2)
 
         with col1:
-        st.markdown("<h3 style='font-size: 24px; white-space: nowrap;'>📋 Recommended Department</h3>",
-            unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size: 32px; font-weight: bold;'>{dept_label}</div>",
-            unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size: 16px; color: gray;'>{dept_score:.2%}</div>",
-            unsafe_allow_html=True)
+            st.subheader("📋 Recommended Department")
+            st.metric(value=f"{dept_score:.2%}", label=dept_label)
 
         with col2:
-        st.markdown("<h3 style='font-size: 24px; white-space: nowrap;'>⚠️ Urgency Level</h3>",
-            unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size: 32px; font-weight: bold;'>{urgency_level}</div>",
-            unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size: 16px; color: gray;'>{urgency_confidence:.2%}</div>",
-            unsafe_allow_html=True)
+            st.subheader("⚠️ Urgency Level")
+            st.metric(value=f"{urgency_confidence:.2%}", label=urgency_level)
 
         # Additional note
         st.info("Note: This system is for reference only. Final diagnosis should be made by a qualified physician.")
