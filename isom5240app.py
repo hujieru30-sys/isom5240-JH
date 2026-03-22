@@ -23,9 +23,9 @@ def load_urgency_pipeline():
 def map_urgency(score):
     """将情感分数（1-5星）映射为紧急程度"""
     rating = int(score.split()[0])  # 输出格式 "1 star" -> 1
-    if rating <= 2:
+    if rating <= 0.4:
         return "低（建议普通门诊）"
-    elif rating == 3:
+    elif rating <= 0.7:
         return "中（建议尽快就诊）"
     else:
         return "高（建议立即就医）"
